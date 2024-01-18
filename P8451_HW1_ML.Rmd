@@ -1,0 +1,38 @@
+---
+title: "P8451_HW1_ML"
+author: "Ruixi Li"
+date: "2024-01-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+```{r import_data, message=FALSE, results='hide'}
+bcdata = read_csv("bcdata_Assignment1.csv") |> janitor::clean_names()
+```
+
+```{r q1_quantitative_features}
+str(bcdata) # all variables are numeric.
+
+summary = skimr::skim(bcdata)# There's no missing in this dataset.
+
+```
+
+```{r q2_recoding}
+bcdata = bcdata |> mutate(who_bmi =
+                   ifelse(bmi < 16.5, "Severely underweight",
+                          ifelse(16.5 <= bmi & bmi < 18.5, "Underweight",
+                                 ifelse(18.5 <= bmi & bmi < 25, "Normal weight",
+                                        ifelse(25 <= bmi & bmi < 30, "Overweight", 
+                                               ifelse(30 <= bmi & bmi < 35, "Obesity class I",
+                                                      ifelse(35 <= bmi & bmi < 40, "Obesity class II","Obesity class III"))))))) |> arrange(bmi)
+
+#check if I have recoded bmi correctly
+table(bcdata$bmi, bcdata$who_bmi)
+bcdata |> group_by(who_bmi) |>
+  summarise(n = n()) 
+
+```
+

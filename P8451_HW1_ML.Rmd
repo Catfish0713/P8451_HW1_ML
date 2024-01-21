@@ -7,32 +7,65 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(plotly)
 ```
+
+# import data
 
 ```{r import_data, message=FALSE, results='hide'}
 bcdata = read_csv("bcdata_Assignment1.csv") |> janitor::clean_names()
 ```
 
+# Q1 get quantitative fesures
+
 ```{r q1_quantitative_features}
-str(bcdata) # all variables are numeric.
+data_type = str(bcdata) # all variables are numeric.
 
 summary = skimr::skim(bcdata)# There's no missing in this dataset.
+summary
 
 ```
 
-```{r q2_recoding}
+# Q2 catogorize bmi based on WHO criteria
+
+```{r q2_recoding, results='hide'}
 bcdata = bcdata |> mutate(who_bmi =
                    ifelse(bmi < 16.5, "Severely underweight",
                           ifelse(16.5 <= bmi & bmi < 18.5, "Underweight",
                                  ifelse(18.5 <= bmi & bmi < 25, "Normal weight",
                                         ifelse(25 <= bmi & bmi < 30, "Overweight", 
                                                ifelse(30 <= bmi & bmi < 35, "Obesity class I",
-                                                      ifelse(35 <= bmi & bmi < 40, "Obesity class II","Obesity class III"))))))) |> arrange(bmi)
+                                                      ifelse(35 <= bmi & bmi < 40, "Obesity class II","Obesity class III"))))))) |> 
+  mutate(classification = recode(classification, "1" = "Healthy Controls", "2" = "Breast Cancer Patients")) |> arrange(bmi)
+
+
 
 #check if I have recoded bmi correctly
 table(bcdata$bmi, bcdata$who_bmi)
-bcdata |> group_by(who_bmi) |>
-  summarise(n = n()) 
+
 
 ```
 
+# Q3 draw bar plot
+
+
+```{r q3_barchart, width = 8, height = 6, message=FALSE, warning=FALSE}
+#Since there's no healthy controls in underweight category, I added a category "underweight healthhy controls" with 0 count to make sure every column has the same width.
+freq_table = bcdata |> group_by(who_bmi, classification) |>
+  summarise(n = n()) |> mutate(proportion = n / sum(n) * 100)
+
+supp = data.frame(who_bmi = "Underweight", 
+              classification = "Healthy Controls",
+              n = 0, proportion = 0)
+final_freq = bind_rows(supp, freq_table) |> mutate(who_bmi = as.factor(who_bmi)) 
+
+level = c("Severely underweight", "Underweight", "Normal weight", "Overweight", "Obesity class I", "Obesity class II", "Obesity class III")
+final_freq |> 
+  mutate(who_bmi = forcats::fct_relevel(who_bmi, level),
+         text_label = str_c(proportion, "%")) |>
+  plot_ly(x = ~who_bmi, y = ~proportion, color = ~classification, type = "bar", colors = "viridis", text = ~text_label)
+  
+
+```
+
+But honestly, I think a barchart showing porportion of the whole sample within each category.(each category doesn't accounted for 1) is more informative.

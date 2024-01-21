@@ -41,7 +41,7 @@ q2 = bcdata |> mutate(who_bmi =
 
 
 #check if I have recoded bmi correctly
-table(bcdata$bmi, bcdata$who_bmi)
+table(q2$bmi, q2$who_bmi)
 
 
 ```
@@ -96,7 +96,7 @@ exp(cbind(OR = coef(mylogit), confint(mylogit)))
 # Q5 linear regression
 
 ```{r linear regression}
-
+q5 = bcdata
 fit = lm(insulin ~ bmi + age + glucose, data = q5)
 fit |> broom::tidy()
 cbind(estimate = coef(fit), confint(fit))

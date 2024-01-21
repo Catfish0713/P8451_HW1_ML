@@ -29,7 +29,7 @@ summary
 # Q2 catogorize bmi based on WHO criteria
 
 ```{r q2_recoding, results='hide'}
-bcdata = bcdata |> mutate(who_bmi =
+q2 = bcdata |> mutate(who_bmi =
                    ifelse(bmi < 16.5, "Severely underweight",
                           ifelse(16.5 <= bmi & bmi < 18.5, "Underweight",
                                  ifelse(18.5 <= bmi & bmi < 25, "Normal weight",
@@ -51,7 +51,7 @@ table(bcdata$bmi, bcdata$who_bmi)
 
 ```{r q3_barchart, width = 8, height = 6, message=FALSE, warning=FALSE}
 #Since there's no healthy controls in underweight category, I added a category "underweight healthhy controls" with 0 count to make sure every column has the same width.
-freq_table = bcdata |> group_by(who_bmi, classification) |>
+freq_table = q2 |> group_by(who_bmi, classification) |>
   summarise(n = n()) |> mutate(proportion = n / sum(n) * 100)
 
 supp = data.frame(who_bmi = "Underweight", 
@@ -69,3 +69,40 @@ final_freq |>
 ```
 
 But honestly, I think a barchart showing porportion of the whole sample within each category.(each category doesn't accounted for 1) is more informative.
+
+# Q4 regression model
+
+```{r regression_model}
+
+q4 = bcdata |> 
+  mutate(classification = recode(classification, "1" = 0, "2" = 1))
+# recode 1-healthy controls as "0", 2-breast cancer patients as "1"
+table(q4$classification, bcdata$classification)
+# recoded correctly
+
+mylogit = glm(classification ~ glucose + homa + leptin + bmi + age, data = q4, family = "binomial")
+mylogit |> broom::tidy()
+cbind(estimate = coef(mylogit), confint(mylogit))
+exp(cbind(OR = coef(mylogit), confint(mylogit)))
+
+```
+
+* Estimate: for HOMA-IR, the beta estimate is 0.273882,and 95% confidence interval is (-0.02555240 0.653222623).
+
+* OR: for HOMA-IR, the OR is 1.31505988,and 95% confidence interval is (0.9747713042 1.921724).
+
+* Interpretation: The odds of developing breast cancer increase by 1.32 unit with  1-unit increase in HOMA-IR. I am 95% confident that the true OR lies between 0.97 and 1.92. p-value = 0.111259 > 0.05.We cannot reject the null hypothesis that the HOMA-IR level has no association with breast cancer at a 5% level of significance. We have insufficient evidence to support that HOMA-IR is significantly associated with breast cancer, adjusting for glucose, leptin, bmi and age.
+
+# Q5 linear regression
+
+```{r linear regression}
+
+fit = lm(insulin ~ bmi + age + glucose, data = q5)
+fit |> broom::tidy()
+cbind(estimate = coef(fit), confint(fit))
+
+```
+
+* Estimate: for age, the beta estimate is -0.05402168,and 95% confidence interval is (-0.1569321, 0.04888876). 
+
+* Interpretation: The level of insulin decreases by 0.054 μU/mL with one-year increase in age, adjusting for bmi and glucose.I am 95% confident that the true change lies between -0.16 and 0.05 μU/mL. p-value = 0.30 > 0.05.We cannot reject the null hypothesis that age has no association with insulin level at a 5% level of significance. We have insufficient evidence to support that age is significantly associated with insulin level, adjusting for bmi and glucose.

@@ -19,10 +19,10 @@ bcdata = read_csv("bcdata_Assignment1.csv") |> janitor::clean_names()
 # Q1 get quantitative fesures
 
 ```{r q1_quantitative_features}
-data_type = str(bcdata) # all variables are numeric.
 
-summary = skimr::skim(bcdata)# There's no missing in this dataset.
-summary
+summary = skimr::skim(bcdata) |> 
+  select(skim_variable, numeric.mean, numeric.p50, numeric.p0, numeric.p100) |> knitr::kable(digits = 2) |> print()
+# There's no missing in this dataset.
 
 ```
 
@@ -57,22 +57,25 @@ freq_table = q2 |> group_by(who_bmi, classification) |>
 supp = data.frame(who_bmi = "Underweight", 
               classification = "Healthy Controls",
               n = 0, proportion = 0)
+
 final_freq = bind_rows(supp, freq_table) |> mutate(who_bmi = as.factor(who_bmi)) 
 
 level = c("Severely underweight", "Underweight", "Normal weight", "Overweight", "Obesity class I", "Obesity class II", "Obesity class III")
+
 final_freq |> 
   mutate(who_bmi = forcats::fct_relevel(who_bmi, level),
          text_label = str_c(proportion, "%")) |>
-  plot_ly(x = ~who_bmi, y = ~proportion, color = ~classification, type = "bar", colors = "viridis", text = ~text_label)
+  plot_ly(x = ~who_bmi, y = ~proportion, color = ~classification, type = "bar", colors = "viridis", text = ~text_label) |>
+  layout(title = 'Barplot showing the proportion of breast cancer cases and controls by WHO BMI category', xaxis = list(title = 'WHO BMI Category'), yaxis = list(title = 'Proportion(%)'))
   
 
 ```
 
-But honestly, I think a barchart showing porportion of the whole sample within each category.(each category doesn't accounted for 1) is more informative.
+But I think a barchart showing porportion of the whole sample within each category.(each category doesn't accounted for 1) is more informative.
 
 # Q4 regression model
 
-```{r regression_model}
+```{r regression_model, message=FALSE}
 
 q4 = bcdata |> 
   mutate(classification = recode(classification, "1" = 0, "2" = 1))
@@ -81,28 +84,28 @@ table(q4$classification, bcdata$classification)
 # recoded correctly
 
 mylogit = glm(classification ~ glucose + homa + leptin + bmi + age, data = q4, family = "binomial")
-mylogit |> broom::tidy()
-cbind(estimate = coef(mylogit), confint(mylogit))
-exp(cbind(OR = coef(mylogit), confint(mylogit)))
+mylogit |> broom::tidy() |> knitr::kable(digits = 2)
+cbind(estimate = coef(mylogit), confint(mylogit)) |> knitr::kable(digits = 2)
+exp(cbind(OR = coef(mylogit), confint(mylogit))) |> knitr::kable(digits = 2)
 
 ```
 
-* Estimate: for HOMA-IR, the beta estimate is 0.273882,and 95% confidence interval is (-0.02555240 0.653222623).
+* Estimate: for HOMA-IR, the beta estimate is 0.27,and 95% confidence interval is (-0.03, 0.65).
 
-* OR: for HOMA-IR, the OR is 1.31505988,and 95% confidence interval is (0.9747713042 1.921724).
+* OR: for HOMA-IR, the OR is 1.32,and 95% confidence interval is (0.97, 1.92).
 
-* Interpretation: The odds of developing breast cancer increase by 1.32 unit with  1-unit increase in HOMA-IR. I am 95% confident that the true OR lies between 0.97 and 1.92. p-value = 0.111259 > 0.05.We cannot reject the null hypothesis that the HOMA-IR level has no association with breast cancer at a 5% level of significance. We have insufficient evidence to support that HOMA-IR is significantly associated with breast cancer, adjusting for glucose, leptin, bmi and age.
+* Interpretation: The odds of developing breast cancer increase by 1.32 unit with  1-unit increase in HOMA-IR. I am 95% confident that the true OR lies between 0.97 and 1.92. p-value = 0.11 > 0.05.We cannot reject the null hypothesis that the HOMA-IR level has no association with breast cancer at a 5% level of significance. We have insufficient evidence to support that HOMA-IR is significantly associated with breast cancer, adjusting for glucose, leptin, bmi and age.
 
 # Q5 linear regression
 
-```{r linear regression}
+```{r linear regression, message=FALSE}
 q5 = bcdata
 fit = lm(insulin ~ bmi + age + glucose, data = q5)
-fit |> broom::tidy()
-cbind(estimate = coef(fit), confint(fit))
+fit |> broom::tidy() |> knitr::kable(digits = 2)
+cbind(estimate = coef(fit), confint(fit)) |> knitr::kable(digits = 2)
 
 ```
 
-* Estimate: for age, the beta estimate is -0.05402168,and 95% confidence interval is (-0.1569321, 0.04888876). 
+* Estimate: for age, the beta estimate is -0.05,and 95% confidence interval is (-0.16, 0.05). 
 
-* Interpretation: The level of insulin decreases by 0.054 μU/mL with one-year increase in age, adjusting for bmi and glucose.I am 95% confident that the true change lies between -0.16 and 0.05 μU/mL. p-value = 0.30 > 0.05.We cannot reject the null hypothesis that age has no association with insulin level at a 5% level of significance. We have insufficient evidence to support that age is significantly associated with insulin level, adjusting for bmi and glucose.
+* Interpretation: The level of insulin decreases by 0.05 μU/mL with one-year increase in age, adjusting for bmi and glucose.I am 95% confident that the true change lies between -0.16 and 0.05 μU/mL. p-value = 0.30 > 0.05.We cannot reject the null hypothesis that age has no association with insulin level at a 5% level of significance. We have insufficient evidence to support that age is significantly associated with insulin level, adjusting for bmi and glucose.

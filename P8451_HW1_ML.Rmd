@@ -1,6 +1,5 @@
 ---
 title: "P8451_HW1_ML"
-author: "Ruixi Li"
 date: "2024-01-17"
 output: html_document
 ---
@@ -66,12 +65,14 @@ final_freq |>
   mutate(who_bmi = forcats::fct_relevel(who_bmi, level),
          text_label = str_c(proportion, "%")) |>
   plot_ly(x = ~who_bmi, y = ~proportion, color = ~classification, type = "bar", colors = "viridis", text = ~text_label) |>
-  layout(title = 'Barplot showing the proportion of breast cancer cases and controls by WHO BMI category', xaxis = list(title = 'WHO BMI Category'), yaxis = list(title = 'Proportion(%)'))
+  layout(title = 'Barplot showing the proportion of breast cancer cases and controls by WHO BMI category', xaxis = list(title = 'WHO BMI Category'), yaxis = list(title = 'Proportion(%)'), barmode = "stack")
   
 
 ```
 
-But I think a barchart showing porportion of the whole sample within each category.(each category doesn't accounted for 1) is more informative.
+* The proportion of each BMI category are cases and the proportion of each BMI category are controls are clearly showed on the stacked proportional bar chart,if you put the mouse on the bar.
+
+* But I think a barchart showing porportion of the whole sample within each category.(each category doesn't accounted for 1) is more informative.
 
 # Q4 regression model
 
